@@ -38,7 +38,7 @@ export default defineConfig({
     },
     {
       path: '/',
-      component: '../layouts/SecurityLayout',
+      component: '../layouts/SecurityLayout', // 这里是为了校验
       routes: [
         {
           path: '/',
@@ -51,7 +51,7 @@ export default defineConfig({
             },
             {
               path: '/welcome',
-              name: 'welcome',
+              name: '欢迎(无国际化)',
               icon: 'smile',
               component: './Welcome',
             },
@@ -72,10 +72,36 @@ export default defineConfig({
               ],
             },
             {
-              name: 'list.table-list',
+              name: '查询表格',
               icon: 'table',
               path: '/list',
               component: './ListTableList',
+            },
+            {
+              name: '后台管理',
+              icon: 'table',
+              path: '/manage',
+              component: './manage',
+              routes: [
+                {
+                  path: '/manage/orderManagement',
+                  name: '订单管理',
+                  icon: 'smile',
+                  component: './manage/orderManagement',
+                },
+                {
+                  path: '/manage/productsManagement',
+                  name: '产品管理',
+                  icon: 'smile',
+                  component: './manage/productsManagement',
+                },
+                {
+                  path: '/manage/categorysManagement',
+                  name: '品类管理',
+                  icon: 'smile',
+                  component: './manage/categorysManagement',
+                },
+              ],
             },
             {
               component: './404',

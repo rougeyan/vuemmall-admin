@@ -5,6 +5,7 @@ import { Link, connect } from 'umi';
 import LoginForm from './components/Login';
 import styles from './style.less';
 
+// 通过拆分 LoginForm 来动态实现tab切换
 const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginForm;
 
 const LoginMessage = ({ content }) => (
@@ -41,7 +42,7 @@ const Login = props => {
           )}
 
           <UserName
-            name="userName"
+            name="username"
             placeholder="用户名: admin or user"
             rules={[
               {

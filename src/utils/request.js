@@ -51,6 +51,7 @@ const errorHandler = error => {
 
 const request = extend({
   errorHandler,
+  requestType: 'form', // 使用form data
   // 默认错误处理
   credentials: 'include', // 默认请求是否带上cookie
 });
