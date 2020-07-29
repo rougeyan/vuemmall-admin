@@ -120,3 +120,20 @@ const BasicLayout = props => {
     }
   }, []);
 ```
+
+
+### 后台管理使用ant design pro table 的注意事项
+
+默认使用request payload加载参数
+
+使用form data
+
+在`utils request.js`下设置
+```js
+const request = extend({
+  errorHandler,
+  requestType: 'form', // 使用form data
+  // 默认错误处理
+  credentials: 'include', // 默认请求是否带上cookie
+});
+```
