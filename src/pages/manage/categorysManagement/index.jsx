@@ -2,8 +2,9 @@ import React, { useState, useRef,useEffect } from 'react';
 import { Link, connect } from 'umi';
 import { PlusOutlined } from '@ant-design/icons';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
-import { Button, Divider, message, Input, Form } from 'antd';
+import { Button, Divider, message, Input, Form,Select,Switch, DatePicker } from 'antd';
 import ProTable from '@ant-design/pro-table';
+import CreateForm from './components/CreateForm'
 
 import { getCategory,queryRule, updateRule, addRule, removeRule } from './service';
 import moment from 'moment';
@@ -18,7 +19,12 @@ const categorysManagement = props =>{
   const [selectedRowsState, setSelectedRows] = useState([]);
   // 默认的categoryId
   const [categoryId,setCategoryId] = useState(0);
+  // 表格数据
   const [tableData,setTableData] = useState({});
+  // 窗口显示
+  const [modalVisible,setModalVisible] = useState(false);
+  // 单点行数
+  const [selectIndexRow,setSelectIndexRow] = useState({})
   
   const handleQuery = (fields)=>async (params, sorter, filter)=>{
     console.log({ ...params, sorter, filter,...fields});
@@ -95,9 +101,6 @@ const categorysManagement = props =>{
               handleQuery({
                 id:record.id
               })()
-              // setCategoryId();
-              // console.log(_)
-              // console.log(record)
               // handleUpdateModalVisible(true);
               // setStepFormValues(record);
             }}
@@ -108,17 +111,110 @@ const categorysManagement = props =>{
           <a
             onClick={() => {
               // handleUpdateModalVisible(true);
-              // setStepFormValues(record);
+              setSelectIndexRow(record);
+              setModalVisible(true);
             }}
           >
             修改
           </a>
           <Divider type="vertical" />
-          <a href="">删除</a>
+          <a onClick={
+            ()=>{
+              console.log(record)
+            }
+          }>删除</a>
         </>
       ),
     },
   ];
+
+  /**
+   * 默认创建UpdataFrom / CreatedForm时 的配置 与columns差不多 有一点区别,详细看配置 而且有左右(必填 选填之分)
+    colums 的排序跟那个不一样
+   */
+
+  const formColumns = [
+    {
+      label: '品类ID',
+      name: 'id',
+      placeholder: "input placeholder",
+      onChange:()=>{
+        console.log('changing')
+      },
+      required: true,
+      noCreate:true // 新建框先不显示
+    },
+    {
+      label: '其他选项',
+      name: 'other',
+      required: true,
+      rules:[
+        {
+          required: true,
+          message: '必选项,请选择',
+        },
+      ],
+      reRender: (val,record)=>{
+
+        // console.log(record);
+        return (<Select allowClear >
+          <Select.Option value="red">Red</Select.Option>
+          <Select.Option value="green">Green</Select.Option>
+          <Select.Option value="blue">Blue</Select.Option>
+        </Select>)
+      },
+      noCreate:true // 新建框先不显示
+    },
+    {
+      label: '状态',
+      name: 'status',
+      valuePropName: "check",
+      reRender:(val,record)=>(<Switch defaultChecked={false} />)
+    },
+    {
+      label: '父级品类ID',
+      name: 'parentId',
+      rules:[
+        {
+          required: true,
+          message: '请填写父级品类ID',
+        },
+      ]
+    },
+    {
+      label: '品类名称',
+      name: 'name',
+      valueType: 'textarea',
+      rules:[
+        {
+          required: true,
+          message: '请填写品类名称',
+        },
+      ]
+    },
+    {
+      label: '创建时间',
+      name: 'createTime',
+      noUpdate:true, // 不允许修改
+      rules:[
+        {
+          required: true,
+          message: '时间必须要填啊',
+        },
+      ],
+      reRender: (val)=>{
+        return (<DatePicker format={'YYYY-MM-DD'}/>)
+      }
+    },
+    {
+      label: '更新时间',
+      name: 'updateTime',
+      noUpdate:true, // 不允许修改
+      reRender: (val)=>{
+        return (<DatePicker format={'YYYY-MM-DD'}/>)
+      }
+    },
+  ]
   
   
   return (
@@ -142,7 +238,7 @@ const categorysManagement = props =>{
           onChange: (_, selectedRows) => setSelectedRows(selectedRows),
         }}
 
-        // form={}
+        // form={} form, 参数? https://protable.ant.design/api
         onSubmit ={
           // 提交表单时触发
           ()=>{
@@ -150,6 +246,24 @@ const categorysManagement = props =>{
           }
         }
       />
+      
+      {/* 新建form */}
+      <CreateForm 
+        modalVisible={modalVisible} 
+        title="新建品类"
+        formColumns={formColumns}
+        onCancel={() => {
+          setModalVisible(false)
+        }}
+        formSubmit={()=>{
+          console.log("postData")
+          setModalVisible(false)
+        }}
+        initialValues={selectIndexRow}
+        >
+      </CreateForm>
+
+
       {props.children}
     </PageContainer>
   )

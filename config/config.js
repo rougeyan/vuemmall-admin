@@ -51,7 +51,7 @@ export default defineConfig({
             },
             {
               path: '/welcome',
-              name: '欢迎(无国际化)',
+              name: '欢迎(关闭国际化)',
               icon: 'smile',
               component: './Welcome',
             },
