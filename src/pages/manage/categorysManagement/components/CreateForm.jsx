@@ -1,13 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect,useRef } from 'react';
 import { Modal,Form,Input,Button } from 'antd';
 import moment from 'moment';
 
 
 const CreateForm = props => {
-  const { modalVisible, onCancel,title,formColumns=[],formSubmit,initialValues={}} = props;
-  // form 预设的方法;
+  const { modalVisible, 
+    onCancel,
+    title,
+    modalType,
+    formColumns=[],
+    formSubmit,
+    initialValues={}
+  } = props;
+  // 获取form实例 调用instance方法
   const [form] = Form.useForm();
-  
+  // form 预设的方法; 通过其他组件调用
+  const formRef = useRef(null);
   // 重置表单
   const resetFormFields = ()=>{
     // 使用name属性被接管  form.setFieldsValue
@@ -15,10 +23,33 @@ const CreateForm = props => {
     // 复杂的表单需要使用 form.setFieldsValue 数据需要被格式化
     form.setFieldsValue({
       ...initialValues,
-      createTime: initialValues.createTime?moment(initialValues.createTime):'', // 格式化时间
-      updateTime: initialValues.updateTime?moment(initialValues.updateTime):'',  // 格式化时间
-      status: !!initialValues.status?'check':'' // 格式化status
+      createTime: initialValues.createTime?moment(initialValues[`createTime`]):'', // 格式化时间
+      updateTime: initialValues.updateTime?moment(initialValues[`updateTime`]):'',  // 格式化时间
+      status: initialValues.status>0?'check':'' // 格式化status
     })
+  }
+  // 还原提交参数
+  const transferFormFields = (fields)=>{
+    console.log(fields.updateTime)
+    // console.log({
+    //   ...fields,
+    //   createTime: fields.createTime?fields.createTime._d:initialValues.createTime,
+    //   updateTime: fields.updateTime?fields.updateTime._d:initialValues.updateTime,
+    //   status: fields.status =='check'?1: 0
+    // })
+    return {
+      ...fields,
+      createTime: fields.createTime?fields.createTime._i:initialValues.createTime,
+      updateTime: fields.updateTime?fields.updateTime._i:initialValues.updateTime,
+      status: fields.status =='check'?1: 0
+    }
+
+//     _d: Sun Mar 26 2017 05:46:00 GMT+0800 (中国标准时间) {}
+// _f: "YYYY-MM-DD HH:mm:ss"
+// _i: "2017-03-26 05:46:00"
+// _isAMomentObject: true
+// _isUTC: false
+// _isValid: true
   }
 
   useEffect(()=>{
@@ -29,33 +60,26 @@ const CreateForm = props => {
     labelCol: { span: 6 },
     wrapperCol: { span: 14 },
   };
-
-  const onCheck = async () => {
-    try {
-      const values = await form.validateFields();
-      console.log('Success:', values);
-      return values
-    } catch (errorInfo) {
-      console.log('Failed:', errorInfo);
-      return errorInfo
-    }
-  };
-
+  
   //这里创建form的数据 gutter 
   const makeFrom = ()=>{
     return (
       <Form
         form={form}
+        ref={formRef}
         initialValues={initialValues} // 这里选择rowValue
         // 提交表单且数据验证成功后回调事件
         onFinish={(fieldsValue)=>{
-          // todo
-          debugger
-          console.log("this is onFinish")
+          // 这里还需要处理一下时间 使他变成时间戳;
+          let params = transferFormFields(fieldsValue)
+          formSubmit(params)
         }}
         {...formItemLayout}
       >
         {formColumns.map((item)=>{
+          if(!modalType && item.noCreate){
+            return 
+          }
           if(!!item.reRender){
             return (
               <Form.Item
@@ -69,8 +93,9 @@ const CreateForm = props => {
                 >
                   {
                   item.reRender(
-                    form.getFieldValue(item.name),
-                    form.getFieldsValue()
+                    form.getFieldValue(item.name), // 值
+                    form.getFieldsValue(), // 整个数
+                    item // 自身参数
                   )}
               </Form.Item>
             )
@@ -83,8 +108,12 @@ const CreateForm = props => {
               rules={item.rules}
               // valuePropName={item.type?item.type:'value'}
               onChange={item.onChange}
-              required={item.required}>
-                <Input placeholder={item.placeholder} disabled={item.noUpdate || item.noCreate}/>
+              required={item.required}
+              hidden={!modalType && item.noCreate}
+              >
+                <Input 
+                  placeholder={item.placeholder} 
+                  disabled={(!!modalType&& item.noUpdate)}/>
               </Form.Item>
           )
         } 
@@ -92,27 +121,14 @@ const CreateForm = props => {
     </Form>    
     )
   }
-
-  // const makeFooter = ()=>{
-  //   return (
-  //   <Form.Item wrapperCol={{ span: 12, offset: 6 }}>
-  //     <Button onClick={onReset}>
-  //       取消
-  //     </Button>
-  //     <Button type="primary" onClick={onCheck}>
-  //       提交
-  //     </Button>
-  //   </Form.Item>)
-  // }
-
   return (
     <Modal
       destroyOnClose
+      getContainer={false}
       title={title}
       visible={modalVisible}
       onOk={()=>{
-        onCheck() // 检查
-        formSubmit()
+        formRef.current.submit()
       }}
       onCancel={() =>{
         resetFormFields()

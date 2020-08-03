@@ -6,7 +6,7 @@ import { Button, Divider, message, Input, Form,Select,Switch, DatePicker } from 
 import ProTable from '@ant-design/pro-table';
 import CreateForm from './components/CreateForm'
 
-import { getCategory,queryRule, updateRule, addRule, removeRule } from './service';
+import { getCategory,addCategory,updateCategory} from './service';
 import moment from 'moment';
 
 
@@ -16,34 +16,66 @@ import moment from 'moment';
 const categorysManagement = props =>{
 
   const actionRef = useRef();
+
   const [selectedRowsState, setSelectedRows] = useState([]);
   // 默认的categoryId
   const [categoryId,setCategoryId] = useState(0);
   // 表格数据
-  const [tableData,setTableData] = useState({});
+  const [tableData,setTableData] = useState({
+    list:[],
+    pageNum: 1,
+    pageSize: 10
+  });
   // 窗口显示
   const [modalVisible,setModalVisible] = useState(false);
   // 单点行数
   const [selectIndexRow,setSelectIndexRow] = useState({})
+  // ModalType
+  const [modalType,setModalType] = useState('revise') // 默认是new 若不改则是revise
   
-  const handleQuery = (fields)=>async (params, sorter, filter)=>{
-    console.log({ ...params, sorter, filter,...fields});
-    const result = await getCategory({ ...params, sorter, filter,...fields});
-    console.log(result)
-    setTableData(result)
-    return result
+  const handleQuery = async (params)=>{
+    const result = await getCategory({ ...params});
+    if(result.status === 0){
+      setTableData(result.data)
+    }
+  }
+  // const handleRequest = (fields)=>async (params, sorter, filter)=>{
+  //   const result = await getCategory({ ...params, sorter, filter,...fields});
+  //   setTableData(result)
+  //   return result
+  // }
+
+  const handleSubmit = async (params)=>{
+    console.log(params)
+    if(!modalType){
+      const result = await addCategory({
+        ...params
+      })
+      if(result.status === 0){
+        setModalVisible(false)
+        actionRef.current.reload()
+      }
+    }else{
+      const result = await updateCategory({
+        ...params
+      })
+      if(result.status === 0){
+        setModalVisible(false)
+        actionRef.current.reload()
+      }
+    }
+    // setModalVisible(false)
   }
   
   
   // (params, sorter, filter) => {
   //   return getCategory({ ...params, sorter, filter})
   // }
-
-  const [form] = Form.useForm();
-
   useEffect(() => {
-    // console.log("useEffect更新啦")
-  })
+    console.log("useEffect更新啦")
+    handleQuery();
+  },[])
+  
 
   // 一个是 add中inputType的Model
   // 一个是table的行列 及其seach部分的内容
@@ -99,8 +131,10 @@ const categorysManagement = props =>{
           <a
             onClick={() => {
               handleQuery({
-                id:record.id
-              })()
+                categoryId:record.id
+              })
+              
+              // console.log()
               // handleUpdateModalVisible(true);
               // setStepFormValues(record);
             }}
@@ -111,6 +145,7 @@ const categorysManagement = props =>{
           <a
             onClick={() => {
               // handleUpdateModalVisible(true);
+              setModalType('revise')
               setSelectIndexRow(record);
               setModalVisible(true);
             }}
@@ -120,6 +155,8 @@ const categorysManagement = props =>{
           <Divider type="vertical" />
           <a onClick={
             ()=>{
+              // todo
+              console.log("点击删除")
               console.log(record)
             }
           }>删除</a>
@@ -137,49 +174,12 @@ const categorysManagement = props =>{
     {
       label: '品类ID',
       name: 'id',
-      placeholder: "input placeholder",
       onChange:()=>{
         console.log('changing')
       },
       required: true,
-      noCreate:true // 新建框先不显示
-    },
-    {
-      label: '其他选项',
-      name: 'other',
-      required: true,
-      rules:[
-        {
-          required: true,
-          message: '必选项,请选择',
-        },
-      ],
-      reRender: (val,record)=>{
-
-        // console.log(record);
-        return (<Select allowClear >
-          <Select.Option value="red">Red</Select.Option>
-          <Select.Option value="green">Green</Select.Option>
-          <Select.Option value="blue">Blue</Select.Option>
-        </Select>)
-      },
-      noCreate:true // 新建框先不显示
-    },
-    {
-      label: '启用状态',
-      name: 'status',
-      valuePropName: "checked",
-      reRender:(val,record)=>(<Switch />)
-    },
-    {
-      label: '父级品类ID',
-      name: 'parentId',
-      rules:[
-        {
-          required: true,
-          message: '请填写父级品类ID',
-        },
-      ]
+      noCreate:true, // 新建框先不显示
+      noUpdate: true // 在更新框下不显示
     },
     {
       label: '品类名称',
@@ -192,26 +192,67 @@ const categorysManagement = props =>{
         },
       ]
     },
+    // {
+    //   label: '其他选项',
+    //   name: 'other',
+    //   required: true,
+    //   rules:[
+    //     {
+    //       required: true,
+    //       message: '必选项,请选择',
+    //     },
+    //   ],
+    //   reRender: (val,record)=>{
+
+    //     // console.log(record);
+    //     return (<Select allowClear >
+    //       <Select.Option value="red">Red</Select.Option>
+    //       <Select.Option value="green">Green</Select.Option>
+    //       <Select.Option value="blue">Blue</Select.Option>
+    //     </Select>)
+    //   },
+    //   noCreate:true // 新建框先不显示
+    // },
+    {
+      label: '启用状态',
+      name: 'status',
+      valuePropName: "checked",
+      reRender:(val,record)=>(<Switch />)
+    },
+    
+    {
+      label: '父级品类ID',
+      name: 'parentId',
+      rules:[
+        {
+          required: true,
+          message: '请填写父级品类ID',
+        },
+      ]
+    },
     {
       label: '创建时间',
       name: 'createTime',
-      noUpdate:true, // 不允许修改
+      valueType: 'date',
+      noCreate: true, // 新建框先不显示
+      noUpdate: true, // 不允许修改
       rules:[
         {
           required: true,
           message: '时间必须要填啊',
         },
       ],
-      reRender: (val)=>{
-        return (<DatePicker format={'YYYY-MM-DD'}/>)
+      reRender: (val,record,opts)=>{
+        return (<DatePicker format={'YYYY-MM-DD'} disabled={(!!modalType&& opts.noUpdate)}/>)
       }
     },
     {
       label: '更新时间',
       name: 'updateTime',
-      noUpdate:true, // 不允许修改
-      reRender: (val)=>{
-        return (<DatePicker format={'YYYY-MM-DD'}/>)
+      noCreate: true, // 新建框先不显示
+      noUpdate: true, // 不允许修改
+      reRender: (val,record,opts)=>{
+        return (<DatePicker format={'YYYY-MM-DD'} disabled={(!!modalType&& opts.noUpdate)}/>)
       }
     },
   ]
@@ -227,43 +268,47 @@ const categorysManagement = props =>{
         actionRef={actionRef}
         rowKey="id"
         toolBarRender={() => [
-          <Button type="primary" onClick={() => ''}>
+          <Button type="primary" onClick={() =>{
+            setSelectIndexRow({});
+            setModalType('');
+            setModalVisible(true);
+          }}>
             <PlusOutlined /> 新建
           </Button>,
         ]}
-        request={handleQuery()}
-        // dataSource={tableData}
+        // request={handleQuery()}
+        dataSource={tableData.list}
+        pagination={{
+          ...tableData,
+          onChange: function(page, pageSize){
+            handleQuery({
+              pageNum: page,
+              pageSize: pageSize
+            })
+          }
+        }}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => setSelectedRows(selectedRows),
         }}
 
         // form={} form, 参数? https://protable.ant.design/api
-        onSubmit ={
-          // 提交表单时触发
-          ()=>{
-            console.log("提交表单");
-          }
-        }
+        // onSubmit ={// 提交表单时触发}
       />
       
-      {/* 新建form */}
       <CreateForm 
+        modalType={modalType}
         modalVisible={modalVisible} 
         title="新建品类"
         formColumns={formColumns}
         onCancel={() => {
           setModalVisible(false)
         }}
-        formSubmit={()=>{
-          console.log("postData")
-          setModalVisible(false)
-        }}
+        formSubmit={handleSubmit}
+        // initialValues={{}}
         initialValues={selectIndexRow}
         >
       </CreateForm>
-
-
       {props.children}
     </PageContainer>
   )

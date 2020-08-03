@@ -146,3 +146,13 @@ const request = extend({
 
 ### 
 [解决ant design出现:'Instance created by `useForm` is not connect to any Form element.警告的问题](https://blog.csdn.net/weixin_43379230/article/details/104986688)
+
+
+### Form 及 Modal 配合使用
+
+使用ref 调用组件instance;
+
+formRef.current.submit()
+
+
+### 哈哈
