@@ -70,7 +70,7 @@ const categorysManagement = props =>{
       hideInSearch:true,
     },
     {
-      title: '状态',
+      title: '启用状态',
       dataIndex: 'status',
       hideInSearch:true,
       renderText: (val) =>{
@@ -166,10 +166,10 @@ const categorysManagement = props =>{
       noCreate:true // 新建框先不显示
     },
     {
-      label: '状态',
+      label: '启用状态',
       name: 'status',
-      valuePropName: "check",
-      reRender:(val,record)=>(<Switch defaultChecked={false} />)
+      valuePropName: "checked",
+      reRender:(val,record)=>(<Switch />)
     },
     {
       label: '父级品类ID',

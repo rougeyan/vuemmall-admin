@@ -7,27 +7,23 @@ const CreateForm = props => {
   const { modalVisible, onCancel,title,formColumns=[],formSubmit,initialValues={}} = props;
   // form 预设的方法;
   const [form] = Form.useForm();
-  useEffect(()=>{
+  
+  // 重置表单
+  const resetFormFields = ()=>{
     // 使用name属性被接管  form.setFieldsValue
-    // 数据默认格式化
+    // 对于简单的输入框表单使用 form.resetFields();
+    // 复杂的表单需要使用 form.setFieldsValue 数据需要被格式化
     form.setFieldsValue({
       ...initialValues,
       createTime: initialValues.createTime?moment(initialValues.createTime):'', // 格式化时间
       updateTime: initialValues.updateTime?moment(initialValues.updateTime):'',  // 格式化时间
+      status: !!initialValues.status?'check':'' // 格式化status
     })
+  }
+
+  useEffect(()=>{
+    resetFormFields()
   })
-
-
-  // reset
-  const onReset = () => {
-    // form.resetFields(); // 对于简单的数据可以用这个
-    // 对于复杂的数据还是重新用setFieldsValue
-    form.setFieldsValue({
-      ...initialValues,
-      createTime: initialValues.createTime?moment(initialValues.createTime):'', // 格式化时间
-      updateTime: initialValues.updateTime?moment(initialValues.updateTime):'',  // 格式化时间
-    })
-  };
 
   const formItemLayout = {
     labelCol: { span: 6 },
@@ -67,7 +63,7 @@ const CreateForm = props => {
                 name={item.name}
                 key={item.label}
                 rules={item.rules}
-                // valuePropName={item.valuePropName?item.valuePropName:'value'}
+                valuePropName={item.valuePropName?item.valuePropName:'value'}
                 onChange={item.onChange}
                 required={item.required}
                 >
@@ -119,6 +115,7 @@ const CreateForm = props => {
         formSubmit()
       }}
       onCancel={() =>{
+        resetFormFields()
         onCancel()
       }}
       // footer与onOk onCancel 是对等的
