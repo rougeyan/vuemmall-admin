@@ -9,10 +9,13 @@ const ADD_CATEGORY = '/manage/category/add_category.do'
 
 
 export async function getCategory(params){
+  let {id,current}=params;
   return request(BASE_PATH + GET_CATEGORY,{
     method: 'GET',
     params: {
-      ...params
+      ...params,
+      categoryId: id?id:0,
+      pageNum: current?current:1,
     },
   })
 }

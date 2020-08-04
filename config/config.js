@@ -101,6 +101,12 @@ export default defineConfig({
                   icon: 'smile',
                   component: './manage/categorysManagement',
                 },
+                {
+                  path: '/manage/dictManagement',
+                  name: '数据字典',
+                  icon: 'smile',
+                  component: './manage/dictManagement',
+                },
               ],
             },
             {

@@ -6,14 +6,14 @@ import { Button, Divider, message, Input, Form,Select,Switch, DatePicker } from 
 import ProTable from '@ant-design/pro-table';
 import CreateForm from './components/CreateForm'
 
-import { getOrders} from './service';
-import { render } from 'enzyme';
+import { getCategory,addCategory,updateCategory} from './service';
+import moment from 'moment';
 
 
 // hooks写法
 
 
-const productsManagement = props =>{
+const dictManagement = props =>{
 
   const actionRef = useRef();
 
@@ -34,7 +34,7 @@ const productsManagement = props =>{
   const [modalType,setModalType] = useState('') // 默认是new 若不改则是revise
   
   const handleQuery = async (params)=>{
-    const result = await getOrders({ ...params});
+    const result = await getCategory({ ...params});
     if(result.status === 0){
       setTableData(result.data)
     }
@@ -42,7 +42,7 @@ const productsManagement = props =>{
   
   // request
   const handleRequest =async (params, sorter, filter)=>{
-    const result = await getOrders({ ...params, sorter, filter});
+    const result = await getCategory({ ...params, sorter, filter});
     // setTableData(result)
     if(result.status ===0){
       return {
@@ -98,117 +98,46 @@ const productsManagement = props =>{
   // 一个是table的行列 及其seach部分的内容
   const columns = [
     {
-      title: '订单编号',
-      dataIndex: 'orderNo',
-      width: 150,
-      rules: [
-        {
-          required: true,
-          message: '规则名称为必填项',
-        },
-      ],
-    },
-    {
-      title: '总价',
-      dataIndex: 'payment',
+      title: '品类编码',
+      dataIndex: 'id',
+      hideInTable: true,
       hideInSearch:true,
-      width: 100,
     },
     {
-      title: '支付渠道',
-      dataIndex: 'paymentType',
-      width: 100,
-      // valueType: 'option',
-      // 行显示 枚举
-      valueEnum: {
-        0: { text: '微信'},
-        1: { text: '支付宝'},
-      },
-      // render: (_,record)=>{
-      //   return [<a>操作a</a>,<a>操作b</a>]
-      // }
-    },
-    {
-      title: '在线支付',
-      dataIndex: 'paymentTypeDesc',
+      title: '父级编码',
+      dataIndex: 'pid',
       hideInSearch:true,
-      width: 100,
     },
     {
-      title: '支付时间',
-      dataIndex: 'paymentTime',
+      title: '字典类型',
+      dataIndex: 'dataType',
+    },
+    {
+      title: '字典编码(Code)',
+      dataIndex: 'dataCode',
+    },
+    {
+      title: '字典值',
+      dataIndex: 'dataValue',
       hideInSearch:true,
-      width: 100,
     },
     {
-      title: '订单状态',
+      title: '字典描述',
+      dataIndex: 'dataDesc',
+    },
+    {
+      title: '启用状态',
       dataIndex: 'status',
-      width: 100,
-      valueEnum: {
-        10: { text: '未支付'},
-        20: { text: '已支付'},
+      hideInSearch:true,
+      renderText: (val) =>{
+        return  !!val?"启用":"停用";
       }
     },
     {
-      title: '订单状态(描述)临时',
-      dataIndex: 'statusDesc',
+      title: '更新时间',
+      dataIndex: 'updateTime',
       hideInSearch:true,
-      width: 100,
-    },
-    {
-      title: '收件人信息',
-      // dataIndex: 'shippingVo',
-      children:[{
-        title: '收件人名称',
-        dataIndex: ['shippingVo','receiverName'],
-        width: 100,
-      },{
-        title: '收件人电话',
-        dataIndex: ['shippingVo','receiverPhone'],
-        width: 100,
-      },{
-        title: '收件人手机',
-        dataIndex: ['shippingVo','receiverMobile'],
-        width: 100,
-      },{
-      },{
-        title: '邮政编码',
-        dataIndex: ['shippingVo','receiverZip'],
-        width: 100,
-      },{
-        title: '收件人地址',
-        render: (_,record)=>{
-          // 解耦默认值
-          const init = {
-            receiverAddress:'',
-            receiverCity: '',
-            receiverDistrict:'',
-            receiverProvince:''
-          }
-          let {shippingVo = init} = record;
-          // 参考ES6
-          // 默认值生效的条件是，对象的属性值严格等于undefined。
-          if(record.shippingVo == null) shippingVo = init
-          const {
-            receiverAddress,
-            receiverCity,
-            receiverDistrict,
-            receiverProvince} = shippingVo
-          return `${receiverProvince}${receiverCity}${receiverDistrict}${receiverAddress}` || ''
-        }
-      }]
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      hideInSearch:true,
-      width: 100,
-    },
-    {
-      title: '收件人',
-      hideInTable: true,
-      dataIndex: ['shippingVo','receiverName'],
-      width: 100,
+      renderText: val => moment(val).format('YYYY-MM-DD hh:mm:ss')
     },
     {
       title: '操作',
@@ -216,6 +145,14 @@ const productsManagement = props =>{
       valueType: 'option',
       render: (_, record) => (
         <>
+          {/* <a
+            onClick={() => {
+              setCategoryId(record.id)
+            }}
+          >
+            查看子品类
+          </a>
+          <Divider type="vertical" /> */}
           <a
             onClick={() => {
               // handleUpdateModalVisible(true);
@@ -224,7 +161,7 @@ const productsManagement = props =>{
               setModalVisible(true);
             }}
           >
-            订单明细
+            修改
           </a>
           <Divider type="vertical" />
           <a  disabled onClick={
@@ -232,17 +169,10 @@ const productsManagement = props =>{
               // todo
               console.log(record)
             }
-          }>修改</a>
-          <Divider type="vertical" />
-          <a onClick={
-            ()=>{
-              // todo
-              console.log(record)
-            }
-          }>订单发货</a>
+          }>删除</a>
         </>
       ),
-    }
+    },
   ];
 
   /**
@@ -254,19 +184,98 @@ const productsManagement = props =>{
     {
       label: '品类编码',
       name: 'id',
-    }
+      onChange:()=>{
+        console.log('changing')
+      },
+      required: true,
+      noCreate:true, // 新建框先不显示
+      noUpdate: true // 在更新框下不显示
+    },
+    {
+      label: '品类名称',
+      name: 'name',
+      valueType: 'textarea',
+      required: true,
+      rules:[
+        {
+          required: true,
+          message: '请填写品类名称',
+        },
+      ]
+    },
+    // {
+    //   label: '其他选项',
+    //   name: 'other',
+    //   required: true,
+    //   rules:[
+    //     {
+    //       required: true,
+    //       message: '必选项,请选择',
+    //     },
+    //   ],
+    //   reRender: (val,record)=>{
+
+    //     // console.log(record);
+    //     return (<Select allowClear >
+    //       <Select.Option value="red">Red</Select.Option>
+    //       <Select.Option value="green">Green</Select.Option>
+    //       <Select.Option value="blue">Blue</Select.Option>
+    //     </Select>)
+    //   },
+    //   noCreate:true // 新建框先不显示
+    // },
+    {
+      label: '启用状态',
+      name: 'status',
+      valuePropName: "checked",
+      reRender:(val,record)=>(<Switch />)
+    },
+    
+    {
+      label: '父级品类编码',
+      name: 'parentId',
+      required: true,
+      rules:[
+        {
+          required: true,
+          message: '请填写父级品类编码',
+        },
+      ]
+    },
+    {
+      label: '创建时间',
+      name: 'createTime',
+      valueType: 'date',
+      noCreate: true, // 新建框先不显示
+      noUpdate: true, // 不允许修改
+      rules:[
+        {
+          required: true,
+          message: '时间必须要填啊',
+        },
+      ],
+      reRender: (val,record,opts)=>{
+        return (<DatePicker  format={'YYYY-MM-DD HH:mm:ss'} disabled={(!!modalType&& opts.noUpdate)}/>)
+      }
+    },
+    {
+      label: '更新时间',
+      name: 'updateTime',
+      noCreate: true, // 新建框先不显示
+      noUpdate: true, // 不允许修改
+      reRender: (val,record,opts)=>{
+        return (<DatePicker  format={'YYYY-MM-DD HH:mm:ss'} disabled={(!!modalType&& opts.noUpdate)}/>)
+      }
+    },
   ]
   
   
   return (
     <PageContainer>
       <ProTable
-        headerTitle="订单管理"
+        headerTitle="品类管理"
         actionRef={actionRef}
         rowKey="id"
-        scroll={{
-          x:true
-        }}
         toolBarRender={() => [
           <Button type="primary" onClick={() =>{
             setSelectIndexRow({});
@@ -324,4 +333,4 @@ const productsManagement = props =>{
 export default connect(({ login, loading }) => ({
   userLogin: login,
   submitting: loading.effects['login/login'],
-}))(productsManagement);
+}))(dictManagement);

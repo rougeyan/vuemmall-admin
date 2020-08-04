@@ -31,7 +31,7 @@ const categorysManagement = props =>{
   // 单点行数
   const [selectIndexRow,setSelectIndexRow] = useState({})
   // ModalType
-  const [modalType,setModalType] = useState('revise') // 默认是new 若不改则是revise
+  const [modalType,setModalType] = useState('') // 默认是new 若不改则是revise
   
   const handleQuery = async (params)=>{
     const result = await getCategory({ ...params});
@@ -39,11 +39,21 @@ const categorysManagement = props =>{
       setTableData(result.data)
     }
   }
-  // const handleRequest = (fields)=>async (params, sorter, filter)=>{
-  //   const result = await getCategory({ ...params, sorter, filter,...fields});
-  //   setTableData(result)
-  //   return result
-  // }
+  
+  // request
+  const handleRequest =async (params, sorter, filter)=>{
+    const result = await getCategory({ ...params, sorter, filter});
+    // setTableData(result)
+    if(result.status ===0){
+      return {
+        data: result.data.list,
+        total: result.data.total,
+        success: true,
+        pageSize: params.pageSize,
+        current: params.current || 1,
+      }
+    }
+  }
 
   const handleSubmit = async (params)=>{
     console.log(params)
@@ -60,28 +70,35 @@ const categorysManagement = props =>{
         ...params
       })
       if(result.status === 0){
-        setModalVisible(false)
+        setModalVisible(false);
         actionRef.current.reload()
       }
     }
-    // setModalVisible(false)
   }
   
   
   // (params, sorter, filter) => {
   //   return getCategory({ ...params, sorter, filter})
   // }
+  
   useEffect(() => {
-    console.log("useEffect更新啦")
-    handleQuery();
-  },[])
+    console.log("只会执行一次,相当于created")
+  },[]) 
+
+  useEffect(() => {
+    console.log("监听到status发生变化")
+  })
+  // 依赖变量执行
+  useEffect(() => {
+    console.log("categoryId:更新了")
+  },[categoryId])
   
 
   // 一个是 add中inputType的Model
   // 一个是table的行列 及其seach部分的内容
   const columns = [
     {
-      title: '品类ID',
+      title: '品类编码',
       dataIndex: 'id',
       rules: [
         {
@@ -91,7 +108,7 @@ const categorysManagement = props =>{
       ],
     },
     {
-      title: '父级品类ID',
+      title: '父级品类编码',
       dataIndex: 'parentId',
       hideInSearch:true,
     },
@@ -127,21 +144,14 @@ const categorysManagement = props =>{
       valueType: 'option',
       render: (_, record) => (
         <>
-          {/* <LoadChildCategory _={_} record={record} /> */}
-          <a
+          {/* <a
             onClick={() => {
-              handleQuery({
-                categoryId:record.id
-              })
-              
-              // console.log()
-              // handleUpdateModalVisible(true);
-              // setStepFormValues(record);
+              setCategoryId(record.id)
             }}
-            >
-              查看子品类
-            </a>
-          <Divider type="vertical" />
+          >
+            查看子品类
+          </a>
+          <Divider type="vertical" /> */}
           <a
             onClick={() => {
               // handleUpdateModalVisible(true);
@@ -153,10 +163,9 @@ const categorysManagement = props =>{
             修改
           </a>
           <Divider type="vertical" />
-          <a onClick={
+          <a  disabled onClick={
             ()=>{
               // todo
-              console.log("点击删除")
               console.log(record)
             }
           }>删除</a>
@@ -172,7 +181,7 @@ const categorysManagement = props =>{
 
   const formColumns = [
     {
-      label: '品类ID',
+      label: '品类编码',
       name: 'id',
       onChange:()=>{
         console.log('changing')
@@ -185,6 +194,7 @@ const categorysManagement = props =>{
       label: '品类名称',
       name: 'name',
       valueType: 'textarea',
+      required: true,
       rules:[
         {
           required: true,
@@ -221,12 +231,13 @@ const categorysManagement = props =>{
     },
     
     {
-      label: '父级品类ID',
+      label: '父级品类编码',
       name: 'parentId',
+      required: true,
       rules:[
         {
           required: true,
-          message: '请填写父级品类ID',
+          message: '请填写父级品类编码',
         },
       ]
     },
@@ -243,7 +254,7 @@ const categorysManagement = props =>{
         },
       ],
       reRender: (val,record,opts)=>{
-        return (<DatePicker format={'YYYY-MM-DD'} disabled={(!!modalType&& opts.noUpdate)}/>)
+        return (<DatePicker  format={'YYYY-MM-DD HH:mm:ss'} disabled={(!!modalType&& opts.noUpdate)}/>)
       }
     },
     {
@@ -252,7 +263,7 @@ const categorysManagement = props =>{
       noCreate: true, // 新建框先不显示
       noUpdate: true, // 不允许修改
       reRender: (val,record,opts)=>{
-        return (<DatePicker format={'YYYY-MM-DD'} disabled={(!!modalType&& opts.noUpdate)}/>)
+        return (<DatePicker  format={'YYYY-MM-DD HH:mm:ss'} disabled={(!!modalType&& opts.noUpdate)}/>)
       }
     },
   ]
@@ -260,9 +271,6 @@ const categorysManagement = props =>{
   
   return (
     <PageContainer>
-      {/* {console.log("DOM节点更新")} */}
-      <p>年轻人要学习管理情绪,控制情绪</p>
-      <p>当前的categoryID是{categoryId}</p>
       <ProTable
         headerTitle="品类管理"
         actionRef={actionRef}
@@ -276,17 +284,26 @@ const categorysManagement = props =>{
             <PlusOutlined /> 新建
           </Button>,
         ]}
-        // request={handleQuery()}
-        dataSource={tableData.list}
+        request={handleRequest} // 绑定查询,
         pagination={{
-          ...tableData,
-          onChange: function(page, pageSize){
-            handleQuery({
-              pageNum: page,
-              pageSize: pageSize
-            })
+          defaultPageSize: 10,
           }
-        }}
+        }
+        // pagination={{
+        //   ...tableData,
+        //   onChange: function(page, pageSize){
+        //     handleQuery({
+        //       pageNum: page,
+        //       pageSize: pageSize
+        //     })
+        //   },
+        //   // onShowSizeChange: function(current, size){
+        //   //   handleQuery({
+        //   //     pageNum: current,
+        //   //     pageSize: size
+        //   //   })
+        //   // }
+        // }}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => setSelectedRows(selectedRows),
@@ -299,13 +316,12 @@ const categorysManagement = props =>{
       <CreateForm 
         modalType={modalType}
         modalVisible={modalVisible} 
-        title="新建品类"
+        title={!modalType?"新建品类":'修改品类'}
         formColumns={formColumns}
         onCancel={() => {
-          setModalVisible(false)
+          setModalVisible(false);
         }}
         formSubmit={handleSubmit}
-        // initialValues={{}}
         initialValues={selectIndexRow}
         >
       </CreateForm>
